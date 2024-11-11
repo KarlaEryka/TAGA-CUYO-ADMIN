@@ -1,0 +1,167 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Words to Content</title>
+    <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/5.4.55/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <link rel="stylesheet" href="css/create_content.css.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"></link>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Modal Trigger Button -->
+    <button id="openModalBtn" class="bg-blue-500 text-white px-4 py-2 rounded">Add Word to Category</button>
+
+    <!-- Modal Structure -->
+    <div id="wordModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center hidden">
+        <div class="bg-white w-11/12 sm:w-96 p-6 rounded shadow-lg">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold">Add Word to Category</h2>
+                <button id="closeModalBtn" class="text-xl text-gray-500">&times;</button>
+            </div>
+
+            <form id="word-category-form" class="mt-4">
+                <!-- Category Select -->
+                <div>
+                    <label for="category-select" class="block text-gray-700">Category:</label>
+                    <select id="category-select" class="w-full p-2 border border-gray-300 rounded mt-1">
+                        <option value="" disabled selected>Select Category</option>
+                    </select>
+                </div>
+
+                <!-- Subcategory Select -->
+                <div class="mt-4">
+                    <label for="subcategory-select" class="block text-gray-700">Subcategory:</label>
+                    <select id="subcategory-select" class="w-full p-2 border border-gray-300 rounded mt-1">
+                        <option value="" disabled selected>Select Subcategory</option>
+                    </select>
+                </div>
+
+                <!-- Word Input -->
+                <div class="mt-4">
+                    <label for="word-category" class="block text-gray-700">Word:</label>
+                    <input type="text" id="word-category" class="w-full p-2 border border-gray-300 rounded mt-1" placeholder="Enter word">
+                </div>
+
+                <!-- Translated Word Input -->
+                <div class="mt-4">
+                    <label for="translated-category" class="block text-gray-700">Translated Word:</label>
+                    <input type="text" id="translated-category" class="w-full p-2 border border-gray-300 rounded mt-1" placeholder="Enter translated word">
+                </div>
+
+                <!-- Options -->
+                <div id="options-container-category" class="mt-4">
+                    <div class="option-wrapper">
+                        <input type="text" class="option-input w-full p-2 border border-gray-300 rounded mt-1" placeholder="Enter option">
+                    </div>
+                </div>
+                <button type="button" class="mt-2 text-blue-500" onclick="addOptionToCategory()">Add Option</button>
+
+                <!-- Image Upload -->
+                <div class="mt-4">
+                    <label for="category-image" class="block text-gray-700">Upload Image:</label>
+                    <input type="file" id="category-image" class="w-full p-2 border border-gray-300 rounded mt-1" accept="image/*">
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-6 text-right">
+                    <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded" onclick="addWordToCategory()">Add Word</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Initialization Code
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyA_VoT0W3zD6u5GVEa24dLcMkt3DJtnqYg",
+          authDomain: "tagalog-cuyonon-mobile-app.firebaseapp.com",
+          projectId: "tagalog-cuyonon-mobile-app",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // DOM Elements
+        const categorySelect = document.getElementById('category-select');
+        const subcategorySelect = document.getElementById('subcategory-select');
+
+        async function loadCategories() {
+          const categoriesRef = collection(db, "categories");
+          const querySnapshot = await getDocs(categoriesRef);
+          
+          querySnapshot.forEach((doc) => {
+            const category = doc.id; 
+            const option = document.createElement("option");
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+          });
+        }
+
+        async function loadSubcategories(category) {
+          subcategorySelect.innerHTML = '<option value="" disabled selected>Select Subcategory</option>';
+          
+          if (!category) return;
+          
+          const subcategoriesRef = collection(db, 'categories', category, 'subcategories');
+          const querySnapshot = await getDocs(subcategoriesRef);
+          
+          querySnapshot.forEach((doc) => {
+            const subcategory = doc.data().subcategory_name;
+            const option = document.createElement("option");
+            option.value = subcategory;
+            option.textContent = subcategory;
+            subcategorySelect.appendChild(option);
+          });
+        }
+
+        categorySelect.addEventListener('change', (event) => {
+          const selectedCategory = event.target.value;
+          loadSubcategories(selectedCategory);
+        });
+
+        loadCategories();
+
+        // Add new option dynamically
+        function addOptionToCategory() {
+            const optionContainer = document.getElementById('options-container-category');
+            const optionInput = document.createElement('div');
+            optionInput.classList.add('option-wrapper');
+            optionInput.innerHTML = `
+                <input type="text" class="option-input w-full p-2 border border-gray-300 rounded mt-1" placeholder="Enter option">
+            `;
+            optionContainer.appendChild(optionInput);
+        }
+
+        // DOM elements for modal
+        const openModalBtn = document.getElementById('openModalBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const wordModal = document.getElementById('wordModal');
+        
+        openModalBtn.addEventListener('click', () => {
+          wordModal.classList.remove('hidden'); // Show modal
+        });
+        
+        closeModalBtn.addEventListener('click', () => {
+          wordModal.classList.add('hidden'); // Hide modal
+        });
+        
+        window.addEventListener('click', (event) => {
+          if (event.target === wordModal) {
+            wordModal.classList.add('hidden');
+          }
+        });
+    </script>
+
+   
+        
+</body>
+</html>
